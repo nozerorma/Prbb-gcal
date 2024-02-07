@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
 import logging
+from google.cloud import storage
 
 def main(request):
     # Set up logging
@@ -94,14 +95,23 @@ def main(request):
             logging.error(f"Error processing event {url}: {e}")
             continue
 
-    # Write the calendar to a file
-    with open('/tmp/events.ics', 'wb') as f:
-        f.write(cal.to_ical())
+    # Create a Cloud Storage client
+    storage_client = storage.Client()
 
+    # Get a bucket reference
+    bucket = storage_client.bucket('ical_bucket')
+
+    # Create a blob object
+    blob = bucket.blob('events.ics')
+
+    # Write the calendar data to the blob
+    blob.upload_from_string(cal.to_ical(), content_type='text/calendar')
+
+    # Return a response indicating success
     print("iCal file created successfully!")
     print("Processed entries: ", processed_entries)
 
-    return "iCal file created successfully!"
+    return 'iCal file created successfully!', 200
 
 # The following is for local testing only, it will not be used in Google Cloud Function environment
 if __name__ == "__main__":

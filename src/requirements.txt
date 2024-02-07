@@ -1,5 +1,6 @@
- bs4
- icalendar
- datetime
- beautifulsoup4
- requests
+bs4
+icalendar
+datetime
+beautifulsoup4
+requests
+google-cloud-storage

@@ -1,7 +1,46 @@
+# Logs and temporary files
 calprbb.log
 events.ics.bak
-import_ics.py
+events.ics
+
+# Old/backup files
 old/
+*.bak
+
+# Credentials and secrets (IMPORTANT: never commit these!)
 cred/
+credentials.json
+*credentials*.json
+*.pem.key
+*.key
+
+# IDE and editor files
 .vscode/
 .history/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments (do NOT commit these!)
+venv/
+env/
+ENV/
+.venv
+
+# Temporary certificate files (but keep the custom bundle)
+src/*.cer
+src/*-cert.pem
+src/harica-*.pem
+!src/custom_ca_bundle.pem
+
+# OS files
+.DS_Store
+Thumbs.db

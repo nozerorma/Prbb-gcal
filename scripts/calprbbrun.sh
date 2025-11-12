@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Activate the virtual environment
-source ~/bin/calprbb/src/venv/bin/activate
+source ../src/venv/bin/activate
 
 # Execute the Python script
-python ~/bin/calprbb/src/main.py &> ~/bin/calprbb/calprbb.log
+python3 ../src/main.py &> ../calprbb.log
 # Deactivate the virtual environment
 deactivate

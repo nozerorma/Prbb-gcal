@@ -2,15 +2,55 @@
 
 from icalendar import Calendar, Event
 import requests
+import certifi
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import re
 import logging
+import os
+from pathlib import Path
 from google.cloud import storage
 from concurrent.futures import ThreadPoolExecutor
 
 # Dictionary to store cached HTML content
 html_cache = {}
+
+# Determine CA bundle path
+# Priority: ENV var > custom bundle > certifi default
+def get_ca_bundle_path():
+    """Get the path to the CA bundle, preferring custom bundle with HARICA intermediate."""
+    # 1. Check environment variable (for deployment flexibility)
+    if 'REQUESTS_CA_BUNDLE' in os.environ:
+        return os.environ['REQUESTS_CA_BUNDLE']
+    
+    # 2. Check for custom bundle in src directory
+    script_dir = Path(__file__).parent
+    custom_bundle = script_dir / 'custom_ca_bundle.pem'
+    if custom_bundle.exists():
+        return str(custom_bundle)
+    
+    # 3. Fallback to certifi (will fail for prbb.org but works for most sites)
+    logging.warning(
+        "Custom CA bundle not found. Run scripts/build_ca_bundle.sh to fix SSL issues with www.prbb.org"
+    )
+    return certifi.where()
+
+CA_BUNDLE = get_ca_bundle_path()
+logging.info(f"Using CA bundle: {CA_BUNDLE}")
+
+# Create a requests Session with retries and custom CA bundle
+session = requests.Session()
+retry_strategy = Retry(
+    total=3,
+    status_forcelist=[429, 500, 502, 503, 504],
+    backoff_factor=0.5,
+    allowed_methods=["HEAD", "GET", "OPTIONS"]
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+session.mount("https://", adapter)
+session.mount("http://", adapter)
 
 def fetch_url_content(url):
     try:
@@ -18,7 +58,8 @@ def fetch_url_content(url):
         if url in html_cache:
             html_content = html_cache[url]
         else:
-            response = requests.get(url)
+            # Use the session with retries and custom CA bundle
+            response = session.get(url, timeout=10, verify=CA_BUNDLE)
             response.raise_for_status()
             html_content = response.text
             # Cache the HTML content
@@ -93,10 +134,10 @@ def main(request):
     cal.add('X-WR-TIMEZONE', 'Europe/Madrid')
     processed_entries = 0
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=20) as executor:
         # Loop through URLs in parallel
         futures = []
-        for i in range(1, 2000):
+        for i in range(1500, 2500):
             url = f"https://www.prbb.org/agenda-evento.php?id={i}"
             futures.append(executor.submit(process_event, url))
 

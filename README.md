@@ -1,39 +1,50 @@
 # Prbb-gcal
-Small script to parse PRBB Agenda and add it to an ica
+Small script to parse PRBB Agenda and add it to an ics
 
 ## Quick Start
 
 ```bash
 # Complete setup (creates venv, builds CA bundle, runs tests)
-./scripts/setup.sh
+./setup.sh
 
 # Run the parser
-cd src
-source venv/bin/activate
-python main.py
+./run.sh
 ```
 
 ## How-to
-1. Run venv creation script
-2. **Build the custom CA bundle** (required for SSL verification)
-3. Run parser
-4. Upload ics to your personal PRBB calendar
-5. Create a cron task to autoparse the calendar whenever you like
+1. Run `./setup.sh` to set up environment and build CA bundle
+2. Run `./run.sh` to parse PRBB events
+3. (Optional) Deploy to Google Cloud Functions for automatic updates
+4. (Optional) Create a cron job for periodic updates
 
 You can also subscribe to my PRBB calendar through the following link
 <link>
 
 ## Setup
 
-### 1. Create Virtual Environment
+### 1. Complete Setup (Recommended)
+```bash
+./setup.sh
+```
+
+This will:
+- Create virtual environment in `src/venv/`
+- Install Python dependencies
+- Build custom CA bundle (fixes SSL verification)
+- Test the SSL configuration
+- Check for Google Cloud SDK (optional)
+
+### 2. Manual Setup
+
+**Create Virtual Environment:**
 ```bash
 ./scripts/venv_create.sh
 ```
 
-### 2. Build Custom CA Bundle
+**Build Custom CA Bundle:**
 The PRBB website (www.prbb.org) has a misconfigured SSL certificate that doesn't include the intermediate CA in its chain. This causes SSL verification to fail with standard Python/requests.
 
-**Build the custom CA bundle** (includes HARICA/GEANT intermediate CA):
+Build the custom CA bundle (includes HARICA/GEANT intermediate CA):
 ```bash
 ./scripts/build_ca_bundle.sh
 ```
@@ -41,10 +52,49 @@ The PRBB website (www.prbb.org) has a misconfigured SSL certificate that doesn't
 This creates `src/custom_ca_bundle.pem` which the script will automatically use.
 
 ### 3. Run the Parser
+
+**Easy way:**
 ```bash
-cd src
-source venv/bin/activate
-python main.py
+./run.sh
+```
+
+### 4. Google Cloud Setup (Optional - for cloud deployment)
+
+If you plan to deploy to Google Cloud Functions:
+
+**Install and configure Google Cloud SDK:**
+```bash
+./scripts/install_gcloud.sh
+```
+
+This script will:
+- Install Google Cloud SDK (if not present)
+- Authenticate with your Google account
+- Set up a default project
+- Configure application default credentials
+
+**Manual configuration (if needed):**
+```bash
+# Install gcloud CLI
+# See: https://cloud.google.com/sdk/docs/install
+
+# Authenticate
+gcloud auth login
+
+# Set project
+gcloud config set project YOUR_PROJECT_ID
+
+# Set up application default credentials
+gcloud auth application-default login
+
+# Enable required APIs
+gcloud services enable cloudfunctions.googleapis.com
+gcloud services enable storage-api.googleapis.com
+```
+
+**Deploy to Google Cloud:**
+```bash
+./scripts/deploy_gcloud.sh
 ```
 
 ## SSL Certificate Issue - Technical Details
@@ -77,6 +127,24 @@ Or rebuild the bundle during deployment by adding to your deploy script:
 
 ## Troubleshooting
 
+### Google OAuth: "invalid_grant: Bad Request"
+```
+google.auth.exceptions.RefreshError: ('invalid_grant: Bad Request', {'error': 'invalid_grant', 'error_description': 'Bad Request'})
+```
+
+**This means your Google OAuth credentials have expired.**
+
+**Solution:**
+```bash
+# Re-authenticate with Google Cloud
+gcloud auth application-default login
+```
+
+Then run the parser again:
+```bash
+./run.sh
+```
+
 ### SSL Certificate Verification Failed
 ```
 ERROR: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
@@ -95,7 +163,40 @@ Run the build script:
 ./scripts/build_ca_bundle.sh
 ```
 
-### Rebuild the bundle
+### Google Cloud: "Project was not passed and could not be determined from the environment"
+```
+ERROR: (gcloud.functions.deploy) INVALID_ARGUMENT: Project was not passed and could not be determined from the environment
+```
+
+**Quick fix**:
+```bash
+# Set your project
+gcloud config set project YOUR_PROJECT_ID
+
+# Verify it's set
+gcloud config get-value project
+```
+
+**Or run the full setup script**:
+```bash
+./scripts/install_gcloud.sh
+```
+
+### Google Cloud: Authentication errors
+```
+ERROR: (gcloud) The current user has not obtained credentials
+```
+
+**Solution**:
+```bash
+# For interactive use
+gcloud auth login
+
+# For application default (needed for Cloud Functions)
+gcloud auth application-default login
+```
+
+### Rebuild the CA bundle
 The bundle should be rebuilt periodically (e.g., monthly) or when certifi is updated:
 ```bash
 pip install --upgrade certifi

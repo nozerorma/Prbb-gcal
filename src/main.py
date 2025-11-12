@@ -147,10 +147,10 @@ def main(request):
                 cal.add_component(event)
                 processed_entries += 1
 
-# # Local
-#     # Write the calendar to a file
-#     with open('events.ics', 'wb') as f:
-#         f.write(cal.to_ical())
+# Local
+    # Write the calendar to a file
+    with open('events.ics', 'wb') as f:
+        f.write(cal.to_ical())
 
 # Cloud
     storage_client = storage.Client()

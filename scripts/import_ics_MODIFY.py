@@ -8,7 +8,9 @@ credentials = service_account.Credentials.from_service_account_file('cred/creden
 service = build('calendar', 'v3', credentials=credentials)
 
 # Define the calendar ID of the target Google Calendar
-calendar_id = 'c_4a2617bc13d0eaab0c497618934718ead6922812ac07f7e46457ba8fae7ff24f@group.calendar.google.com'
+# TODO: Replace with your Google Calendar ID
+calendar_id = 'YOUR_CALENDAR_ID_HERE@group.calendar.google.com'
+
 
 # Read the contents of the .ics file
 with open('events.ics', 'r') as f:

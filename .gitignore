@@ -2,7 +2,7 @@
 calprbb.log
 events.ics.bak
 events.ics
-
+import_ics.py
 # Old/backup files
 old/
 *.bak
